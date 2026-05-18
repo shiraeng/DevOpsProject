@@ -10,22 +10,24 @@ pipeline {
             }
         }
 
-        // שלב 2: בניית הבקנד (Flask) כדי לוודא שאין שגיאות
+        // שלב 2: בניית הבקנד (Flask) 
         stage('Build Backend') {
             steps {
                 echo 'Building Backend Docker Image...'
                 dir('backend') { 
-                    sh 'docker build -t backend-test:latest .'
+                    // שינוי מ-sh ל-bat עבור Windows
+                    bat 'docker build -t backend-test:latest .'
                 }
             }
         }
 
-        // שלב 3: בניית הפרונטנד (Vite/React) כדי לוודא שההתקנה והבנייה עוברות חלק
+        // שלב 3: בניית הפרונטנד (Vite/React)
         stage('Build Frontend') {
             steps {
                 echo 'Building Frontend Docker Image...'
                 dir('frontend') { 
-                    sh 'docker build -t frontend-test:latest .'
+                    // שינוי מ-sh ל-bat עבור Windows
+                    bat 'docker build -t frontend-test:latest .'
                 }
             }
         }
@@ -34,21 +36,21 @@ pipeline {
         stage('Deploy Application') {
             steps {
                 echo 'Deploying application with Docker Compose...'
-                sh 'docker compose up -d --build'
+                // שינוי מ-sh ל-bat עבור Windows
+                bat 'docker compose up -d --build'
             }
         }
     }
 
-    // סיכום הריצה - הדפסת הודעות בהתאם לתוצאה
     post {
         always {
             echo 'Pipeline execution finished.'
         }
         success {
-            echo '🎉 The build and deployment succeeded perfectly!'
+            echo 'The build and deployment succeeded perfectly!'
         }
         failure {
-            echo '❌ The build failed. Please check the steps above to see what broke.'
+            echo 'The build failed. Please check the steps above to see what broke.'
         }
     }
 }
