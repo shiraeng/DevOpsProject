@@ -15,7 +15,6 @@ pipeline {
             steps {
                 echo 'Building Backend Docker Image...'
                 dir('backend') { 
-                    // שינוי מ-sh ל-bat עבור Windows
                     bat 'docker build -t backend-test:latest .'
                 }
             }
@@ -26,7 +25,6 @@ pipeline {
             steps {
                 echo 'Building Frontend Docker Image...'
                 dir('frontend') { 
-                    // שינוי מ-sh ל-bat עבור Windows
                     bat 'docker build -t frontend-test:latest .'
                 }
             }
@@ -35,8 +33,12 @@ pipeline {
         // שלב 4: הרמת כל הפרויקט יחד בעזרת Docker Compose
         stage('Deploy Application') {
             steps {
-                echo 'Deploying application with Docker Compose...'
-                // שינוי מ-sh ל-bat עבור Windows
+                echo 'Cleaning up old containers and deploying...'
+                
+                // עצירת קונטיינרים ישנים ומניעת שגיאות קונפליקט בשמות
+                bat 'docker compose down'
+                
+                // הרמה מחדש של האפליקציה ברקע
                 bat 'docker compose up -d --build'
             }
         }
