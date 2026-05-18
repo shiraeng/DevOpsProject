@@ -33,12 +33,16 @@ pipeline {
         // שלב 4: הרמת כל הפרויקט יחד בעזרת Docker Compose
         stage('Deploy Application') {
             steps {
-                echo 'Cleaning up old containers and deploying...'
+                echo 'Cleaning up old containers by force and deploying...'
                 
-                // עצירת קונטיינרים ישנים ומניעת שגיאות קונפליקט בשמות
+                // הסרת קונטיינרים ישנים ספציפיים אם הם קיימים (בלי קשר לקומפוז)
+                // ה-|| ver > nul נועד למנוע מה-Pipeline לקרוס אם הקונטיינר לא היה קיים בכלל
+                bat 'docker rm -f flask-backend vite-frontend || ver > nul'
+                
+                // ניקוי הקומפוז הקיים (ליתר ביטחון)
                 bat 'docker compose down'
                 
-                // הרמה מחדש של האפליקציה ברקע
+                // הרמה מחדש של האפליקציה
                 bat 'docker compose up -d --build'
             }
         }
