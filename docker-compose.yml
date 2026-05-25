@@ -1,31 +1,31 @@
 version: '3.8'
 
 services:
-  # --- שירות הבקנד (Flask) ---
   backend:
     build:
-      context: ./backend        # נתיב לתיקיית הבקנד שבה נמצא ה-Dockerfile שלו
+      context: ./backend
       dockerfile: Dockerfile
+    image: myapp-backend:latest
     container_name: flask-backend
     ports:
-      - "5000:5000"             # חשיפת פורט 5000 למחשב שלך
+      - "5000:5000"
     volumes:
-      - ./backend:/app          # מאפשר עדכון קוד בזמן אמת (Hot Reload) בלי לבנות מחדש
+      - sqlite_data:/app/instance
     environment:
-      - FLASK_ENV=development
+      - FLASK_ENV=production
 
-  # --- שירות הפרונטנד (Vite / React) ---
   frontend:
     build:
-      context: ./frontend       # נתיב לתיקיית הפרונטנד שבה נמצא ה-Dockerfile שלו
+      context: ./frontend
       dockerfile: Dockerfile
+    image: myapp-frontend:latest
     container_name: vite-frontend
     ports:
-      - "5173:5173"             # חשיפת פורט 5173 למחשב שלך
-    volumes:
-      - ./frontend:/app         # מאפשר עדכון קוד בזמן אמת בפרונטנד
-      - /app/node_modules       # מונע דריסה של תיקיית ה-node_modules שבתוך המכולה
+      - "5173:5173"
     environment:
-      - CHOKIDAR_USEPOLLING=true # עוזר לרענון האוטומטי לעבוד חלק בתוך דוקר
+      - CHOKIDAR_USEPOLLING=true
     depends_on:
-      - backend                 # אומר לדוקר להפעיל קודם כל את הבקנד ורק אז את הפרונטנד
+      - backend
+
+volumes:
+  sqlite_data:

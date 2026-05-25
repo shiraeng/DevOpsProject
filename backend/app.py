@@ -7,8 +7,11 @@ from flask_cors import CORS
 app = Flask(__name__)
 
 # configure database, todo.db
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///todo.db'
-
+# 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////app/instance/todo.db'
+@app.route('/health')
+def health():
+    return jsonify({"status": "ok"}), 200
 # Initialize plugin
 db = SQLAlchemy(app)
 # set for ReactJS

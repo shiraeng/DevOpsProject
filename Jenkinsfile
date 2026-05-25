@@ -1,8 +1,9 @@
 pipeline {
-    agent any 
+    agent any
 
     stages {
-        // שלב 1: משיכת הקוד מ-GitHub
+
+        // שלב 1: משיכת קוד מ-GitHub
         stage('Checkout Code') {
             steps {
                 echo 'Pulling latest code from GitHub...'
@@ -10,53 +11,65 @@ pipeline {
             }
         }
 
-        // שלב 2: בניית הבקנד (Flask) 
-        stage('Build Backend') {
+        // שלב 2: בניית כל ה-images דרך Compose (פעם אחת בלבד)
+        stage('Build') {
             steps {
-                echo 'Building Backend Docker Image...'
-                dir('backend') { 
-                    bat 'docker build -t backend-test:latest .'
-                }
+                echo 'Building Docker images...'
+                bat 'docker compose build --no-cache'
+                // --no-cache: מבטיח שהקוד החדש נכנס לimage, לא גרסה ישנה מה-cache
             }
         }
 
-        // שלב 3: בניית הפרונטנד (Vite/React)
-        stage('Build Frontend') {
+        // שלב 3: הורדת המערכת הישנה (בלי -v כדי לשמור את ה-DB!)
+        stage('Tear Down') {
             steps {
-                echo 'Building Frontend Docker Image...'
-                dir('frontend') { 
-                    bat 'docker build -t frontend-test:latest .'
-                }
-            }
-        }
-
-        // שלב 4: הרמת כל הפרויקט יחד בעזרת Docker Compose
-        stage('Deploy Application') {
-            steps {
-                echo 'Cleaning up old containers by force and deploying...'
-                
-                // הסרת קונטיינרים ישנים ספציפיים אם הם קיימים (בלי קשר לקומפוז)
-                // ה-|| ver > nul נועד למנוע מה-Pipeline לקרוס אם הקונטיינר לא היה קיים בכלל
-                bat 'docker rm -f flask-backend vite-frontend || ver > nul'
-                
-                // ניקוי הקומפוז הקיים (ליתר ביטחון)
+                echo 'Stopping old containers...'
                 bat 'docker compose down'
-                
-                // הרמה מחדש של האפליקציה
-                bat 'docker compose up -d --build'
+                // ⚠️ אסור להוסיף -v כאן — זה ימחק את נתוני ה-DB
+            }
+        }
+
+        // שלב 4: הרמת המערכת החדשה
+        stage('Deploy') {
+            steps {
+                echo 'Starting new containers...'
+                bat 'docker compose up -d'
+                // -d = detached, רץ ברקע
+                // לא צריך --build כי כבר בנינו בשלב 2
+            }
+        }
+
+        // שלב 5: בדיקה שהכל עלה בהצלחה
+        stage('Test') {
+            steps {
+                echo 'Waiting for services to start...'
+                sleep(time: 8, unit: 'SECONDS')   // נותן זמן לקונטיינרים לעלות
+
+                echo 'Testing Backend...'
+                bat 'curl -f http://localhost:5000/health || exit 1'
+                // -f = fail אם מקבלים שגיאה
+                // || exit 1 = גורם ל-Jenkins לסמן FAILED אם ה-curl נכשל
+
+                echo 'Testing Frontend...'
+                bat 'curl -f http://localhost:5173 || exit 1'
+
+                echo 'All services are up!'
             }
         }
     }
 
     post {
         always {
-            echo 'Pipeline execution finished.'
+            echo 'Pipeline finished.'
+            // מציג לוגים תמיד — שימושי לדיבוג
+            bat 'docker compose ps'
         }
         success {
-            echo 'The build and deployment succeeded perfectly!'
+            echo '✅ Deploy הצליח — המערכת רצה!'
         }
         failure {
-            echo 'The build failed. Please check the steps above to see what broke.'
+            echo '❌ משהו נכשל — בודק לוגים...'
+            bat 'docker compose logs --tail=30'
         }
     }
 }
