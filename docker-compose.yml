@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -14,14 +12,14 @@ services:
     environment:
       - FLASK_ENV=production
 
- frontend:
+  frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     image: myapp-frontend:latest
     container_name: vite-frontend
     ports:
-      - "3000:3000"        # ← שונה מ-5173
+      - "3000:3000"
     depends_on:
       - backend
 
