@@ -1,15 +1,13 @@
-FROM node:20-alpine
+FROM node:18-alpine
 
 WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 COPY . .
 
-EXPOSE 5173
+EXPOSE 3000
 
-CMD ["npm", "run", "dev", "--", "--host"]
-#                            ↑
-#                     חובה! בלי זה Vite לא חושף את הפורט החוצה מהקונטיינר
+CMD ["npm", "start"]

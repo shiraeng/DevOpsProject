@@ -16,7 +16,6 @@ pipeline {
             steps {
                 echo 'Building Docker images...'
                 bat 'docker compose build --no-cache'
-                // --no-cache: מבטיח שהקוד החדש נכנס לimage, לא גרסה ישנה מה-cache
             }
         }
 
@@ -25,7 +24,6 @@ pipeline {
             steps {
                 echo 'Stopping old containers...'
                 bat 'docker compose down'
-                // ⚠️ אסור להוסיף -v כאן — זה ימחק את נתוני ה-DB
             }
         }
 
@@ -34,8 +32,6 @@ pipeline {
             steps {
                 echo 'Starting new containers...'
                 bat 'docker compose up -d'
-                // -d = detached, רץ ברקע
-                // לא צריך --build כי כבר בנינו בשלב 2
             }
         }
 
@@ -43,15 +39,13 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Waiting for services to start...'
-                sleep(time: 8, unit: 'SECONDS')   // נותן זמן לקונטיינרים לעלות
+                sleep(time: 15, unit: 'SECONDS')   // CRA לוקח יותר זמן לעלות
 
                 echo 'Testing Backend...'
                 bat 'curl -f http://localhost:5000/health || exit 1'
-                // -f = fail אם מקבלים שגיאה
-                // || exit 1 = גורם ל-Jenkins לסמן FAILED אם ה-curl נכשל
 
                 echo 'Testing Frontend...'
-                bat 'curl -f http://localhost:5173 || exit 1'
+                bat 'curl -f http://localhost:3000 || exit 1'
 
                 echo 'All services are up!'
             }
@@ -61,14 +55,13 @@ pipeline {
     post {
         always {
             echo 'Pipeline finished.'
-            // מציג לוגים תמיד — שימושי לדיבוג
             bat 'docker compose ps'
         }
         success {
-            echo '✅ Deploy הצליח — המערכת רצה!'
+            echo 'Deploy הצליח!'
         }
         failure {
-            echo '❌ משהו נכשל — בודק לוגים...'
+            echo 'משהו נכשל — בודק לוגים...'
             bat 'docker compose logs --tail=30'
         }
     }
